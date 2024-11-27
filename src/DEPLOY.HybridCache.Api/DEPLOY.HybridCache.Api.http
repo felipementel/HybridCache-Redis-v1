@@ -1,0 +1,6 @@
+@DEPLOY.HybridCache.Api_HostAddress = http://localhost:5211
+
+GET {{DEPLOY.HybridCache.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

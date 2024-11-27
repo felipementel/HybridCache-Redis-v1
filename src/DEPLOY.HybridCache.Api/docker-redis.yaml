@@ -1,0 +1,22 @@
+﻿services:
+
+  redisdb:
+    image: redis:7.4.1
+    container_name: redis-DEPLOY
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - /data
+  
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    restart: always
+    hostname: redis-commander
+    depends_on:
+      - redisdb
+    environment:
+    - REDIS_HOSTS=local:redis-DEPLOY:6379
+    ports:
+    - 9081:8081
