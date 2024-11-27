@@ -2,6 +2,8 @@
 
 Apresentacao no canal DEPLOY em 26/11/2024
 
+https://www.youtube.com/watch?v=gjEtF0bS1sg
+
 ![Imagem](./docs/banner.png)
 
 > [!NOTE]
