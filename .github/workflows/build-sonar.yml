@@ -153,7 +153,7 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
             /d:sonar.exclusions="${{ env.sonarExclusions }}" \
-            /sonar.projectBaseDir="${{ env.projectBaseDir }}"
+            /d:sonar.projectBaseDir="${{ env.projectBaseDir }}"
           dotnet restore ${{ env.pathToCsproj }}
           dotnet build ${{ env.pathToCsproj }} --no-incremental
           dotnet-coverage collect 'dotnet test ./src/' -f xml  -o 'coverage.xml'
@@ -171,7 +171,7 @@ jobs:
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.exclusions="${{ env.sonarExclusions }}" \
-            /sonar.projectBaseDir="${{ env.projectBaseDir }}"
+            /d:sonar.projectBaseDir="${{ env.projectBaseDir }}"
           dotnet restore ${{ env.pathToCsproj }}
           dotnet build ${{ env.pathToCsproj }} --no-incremental
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
