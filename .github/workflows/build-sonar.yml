@@ -51,7 +51,7 @@ on:
  
 env:
   dotnetVersion: 9.x
-  projectBaseDir: ./src
+  projectBaseDir: ./src/
   pathToSln: ./src/DEPLOY.HybridCache.Api.sln
   pathToCsproj: ./src/DEPLOY.HybridCache.Api/DEPLOY.HybridCache.Api.csproj
   sonarExclusions: '**/Migrations/**'
