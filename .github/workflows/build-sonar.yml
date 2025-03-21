@@ -51,8 +51,9 @@ on:
  
 env:
   dotnetVersion: 9.x
-  pathToCsproj: ./src/DEPLOY.HybridCache.Api/DEPLOY.HybridCache.Api.csproj
+  projectBaseDir: ./src
   pathToSln: ./src/DEPLOY.HybridCache.Api.sln
+  pathToCsproj: ./src/DEPLOY.HybridCache.Api/DEPLOY.HybridCache.Api.csproj
   sonarExclusions: '**/Migrations/**'
 
 jobs:
@@ -151,7 +152,8 @@ jobs:
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
-            /d:sonar.exclusions="**/Migrations/**"
+            /d:sonar.exclusions="${{ env.sonarExclusions }}" \
+            /sonar.projectBaseDir="${{ env.projectBaseDir }}"
           dotnet restore ${{ env.pathToCsproj }}
           dotnet build ${{ env.pathToCsproj }} --no-incremental
           dotnet-coverage collect 'dotnet test ./src/' -f xml  -o 'coverage.xml'
@@ -168,7 +170,8 @@ jobs:
             /o:"${{ vars.SONAR_ORGANIZATION }}" \
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.exclusions="**/Migrations/**"
+            /d:sonar.exclusions="${{ env.sonarExclusions }}" \
+            /sonar.projectBaseDir="${{ env.projectBaseDir }}"
           dotnet restore ${{ env.pathToCsproj }}
           dotnet build ${{ env.pathToCsproj }} --no-incremental
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
