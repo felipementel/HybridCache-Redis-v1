@@ -13,6 +13,8 @@ on:
     paths-ignore:
       - '**.md'
       - '.github/**'
+      - 'docker/**'
+      - 'docs/**'
   # workflow_call:
   workflow_dispatch:
     inputs:
@@ -49,8 +51,9 @@ on:
  
 env:
   dotnetVersion: 9.x
-  csprojFolder: ./src/DEPLOY.HybridCache.Api/DEPLOY.HybridCache.Api.csproj
-  slnFolder: ./src/DEPLOY.HybridCache.Api.sln
+  pathToCsproj: ./src/DEPLOY.HybridCache.Api/DEPLOY.HybridCache.Api.csproj
+  pathToSln: ./src/DEPLOY.HybridCache.Api.sln
+  sonarExclusions: '**/Migrations/**'
 
 jobs:
   build:
@@ -71,7 +74,7 @@ jobs:
       - name: Get Environment
         id: get-env
         run: |
-          echo "::warning::Environment ${{ inputs.environment }}"
+          echo -e "${GREEN} ::warning::Environment ${{ inputs.environment }}"
           echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_OUTPUT
 
       - name: Sys - Checkout
@@ -81,7 +84,7 @@ jobs:
         id: get-version
         shell: bash
         run: |
-          version=$(sed -n 's/.*<Version>\(.*\)<\/Version>.*/\1/p' $csprojFolder)
+          version=$(sed -n 's/.*<Version>\(.*\)<\/Version>.*/\1/p' ${{ env.pathToCsproj }})
           echo "tag=$version" >> "$GITHUB_OUTPUT"
       
       - name: Sys - Setup .NET version ${{ env.dotnetVersion }}
@@ -149,8 +152,8 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
             /d:sonar.exclusions="**/Migrations/**"
-          dotnet restore ${{ env.csprojFolder }}
-          dotnet build ${{ env.csprojFolder }} --no-incremental
+          dotnet restore ${{ env.pathToCsproj }}
+          dotnet build ${{ env.pathToCsproj }} --no-incremental
           dotnet-coverage collect 'dotnet test ./src/' -f xml  -o 'coverage.xml'
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
@@ -165,10 +168,9 @@ jobs:
             /o:"${{ vars.SONAR_ORGANIZATION }}" \
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
             /d:sonar.exclusions="**/Migrations/**"
-          dotnet restore ${{ env.csprojFolder }}
-          dotnet build ${{ env.csprojFolder }} --no-incremental
+          dotnet restore ${{ env.pathToCsproj }}
+          dotnet build ${{ env.pathToCsproj }} --no-incremental
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: 🔐 Build and analyze (Test ✅, Sonar ⛔)
@@ -177,7 +179,7 @@ jobs:
           dotnet-coverage collect 'dotnet test ./src/' -f xml  -o 'coverage.xml'
 
       - name: 🍵 Restore dependencies
-        run: dotnet restore ${{ env.slnFolder }}
+        run: dotnet restore ${{ env.pathToSln }}
 
       - name: 🍵 Snyk Setup
         uses: snyk/actions/setup@master
