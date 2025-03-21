@@ -19,7 +19,7 @@ builder.Services.AddHybridCache(options =>
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    //options.InstanceName = "redis-DEPLOY";
+    // options.InstanceName = "local";
     options.Configuration =
         builder.Configuration.GetConnectionString("RedisConnectionString");
 });
@@ -90,7 +90,7 @@ app.MapGet("/get-using-cache/v2/{name}/{age}", async (
 {
     OperationId = "funcao-app-post",
     Summary = "Cache completo",
-    Description = "Operação para app",
+    Description = "Operaï¿½ï¿½o para app",
     Tags = new List<OpenApiTag> { new() { Name = "Cache" } }
 });
 

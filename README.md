@@ -229,7 +229,7 @@ A leitura pode ser feita com os comandos:
 Ainda é possível remover um elemento com:
 
 “SREM chave valor”: tenta remover o valor dado do set.
-
+```
 redis> SADD myset "Hello"
 (integer) 1
 redis> SADD myset "World"
@@ -237,7 +237,7 @@ redis> SADD myset "World"
 redis> SADD myset "World"
 (integer) 0
 redis> SMEMBERS myset
-
+```
 1. "World"
 2. "Hello"
    redis>

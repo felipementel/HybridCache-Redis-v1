@@ -1,0 +1,224 @@
+name: CI
+run-name: "${{ github.actor }} - ${{ github.run_id }}"
+
+#SECRETS: GITLEAKS_LICENSE, SONAR_TOKEN, SONAR_PROJECT_KEY, SNYK_TOKEN
+#VARS: SONAR_ORGANIZATION
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      closed
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+  # workflow_call:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: environment
+        description: 'Environment to run the workflow'
+        required: true
+        default: 'DEV'
+      git-leaks:
+        type: boolean
+        description: 'Run GitLeaks'
+        required: false
+        default: true
+      sonar-qube:
+        type: boolean
+        description: 'Run SonarQube'
+        required: false
+        default: true
+      unit-tests:
+        type: boolean
+        description: 'Run Unit Tests'
+        required: false
+        default: true
+      snyk:
+        type: boolean
+        description: 'Snyk.io'
+        required: false
+        default: true
+      msg-canal-deploy:
+        type: string
+        description: 'Message to be displayed in the summary'
+        required: false
+        default: 'Canal DEPLOY - O melhor canal sobre .NET, Azure, DevOps e IA'
+ 
+env:
+  dotnetVersion: 9.x
+  csprojFolder: ./src/DEPLOY.HybridCache.Api/DEPLOY.HybridCache.Api.csproj
+  slnFolder: ./src/DEPLOY.HybridCache.Api.sln
+
+jobs:
+  build:
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    outputs:
+      tag-version: ${{ steps.get-version.outputs.tag }}
+      now: ${{ steps.get-env.outputs.NOW }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    permissions:
+      contents: read 
+      security-events: write
+      
+    steps:
+      - name: Get Environment
+        id: get-env
+        run: |
+          echo "::warning::Environment ${{ inputs.environment }}"
+          echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_OUTPUT
+
+      - name: Sys - Checkout
+        uses: actions/checkout@v4
+
+      - name: Sys - Get-Version from csproj
+        id: get-version
+        shell: bash
+        run: |
+          version=$(sed -n 's/.*<Version>\(.*\)<\/Version>.*/\1/p' $csprojFolder)
+          echo "tag=$version" >> "$GITHUB_OUTPUT"
+      
+      - name: Sys - Setup .NET version ${{ env.dotnetVersion }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.dotnetVersion }}
+
+      - name: 🎃 Install Coverage
+        if: ${{ inputs.unit-tests }}
+        run: |
+          dotnet tool install --global dotnet-coverage
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          
+      - name: 🧱 Git Leaks 
+        uses: gitleaks/gitleaks-action@v2
+        if: ${{ inputs.git-leaks }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITLEAKS_ENABLE_SUMMARY: true
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+          GITLEAKS_NOTIFY_USER_LIST: '@felipementel'
+
+      - name: 🔐 Set up JDK 23 to use with SonarCloud
+        if: ${{ inputs.sonar-qube }}
+        uses: actions/setup-java@v4        
+        with:
+          java-version: 23
+          distribution: 'zulu'
+
+      - name: 🔐 SonarCloud packages cache
+        uses: actions/cache@v4
+        if: ${{ inputs.sonar-qube }}
+        with:
+          path: ~/sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: 🔐 SonarCloud scanner cache
+        id: cache-sonar-scanner
+        if: ${{ inputs.sonar-qube }}
+        uses: actions/cache@v4
+        with:
+          path: ./.sonar/scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
+    
+      - name: 🔐 SonarCloud scanner installer
+        if: ${{ inputs.sonar-qube }} #&& (steps.cache-sonar-scanner.outputs.cache-hit != 'true')
+        run: |
+          mkdir -p .sonar/scanner
+          dotnet tool install --global dotnet-sonarscanner
+        # --tool-path .sonar/scanner
+        
+      - name: 🔐 Build and analyze  (Test ✅, Sonar ✅)
+        if: ${{ inputs.unit-tests && inputs.sonar-qube }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet-sonarscanner begin \
+            /k:"${{ secrets.SONAR_PROJECT_KEY }}" \
+            /o:"${{ vars.SONAR_ORGANIZATION }}" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
+            /d:sonar.exclusions="**/Migrations/**"
+          dotnet restore ${{ env.csprojFolder }}
+          dotnet build ${{ env.csprojFolder }} --no-incremental
+          dotnet-coverage collect 'dotnet test ./src/' -f xml  -o 'coverage.xml'
+          dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: 🔐 Build and analyze (Test ⛔, Sonar ✅)
+        if: ${{ !inputs.unit-tests && inputs.sonar-qube }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet-sonarscanner begin \
+            /k:"${{ secrets.SONAR_PROJECT_KEY }}" \
+            /o:"${{ vars.SONAR_ORGANIZATION }}" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
+            /d:sonar.exclusions="**/Migrations/**"
+          dotnet restore ${{ env.csprojFolder }}
+          dotnet build ${{ env.csprojFolder }} --no-incremental
+          dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: 🔐 Build and analyze (Test ✅, Sonar ⛔)
+        if: ${{ inputs.unit-tests && !inputs.sonar-qube }}
+        run: |
+          dotnet-coverage collect 'dotnet test ./src/' -f xml  -o 'coverage.xml'
+
+      - name: 🍵 Restore dependencies
+        run: dotnet restore ${{ env.slnFolder }}
+
+      - name: 🍵 Snyk Setup
+        uses: snyk/actions/setup@master
+
+      - name: 🍵 Run Snyk to check for vulnerabilities
+        uses: snyk/actions/dotnet@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --sarif-file-output=snyk.sarif --file=./src/PoC.KeyCloak.sln
+        
+      - name: 🍵 Upload result to GitHub Code Scanning
+        if: ${{ inputs.git-leaks }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
+
+      - name: Write to workflow job summary
+        run: |
+          SUMMARY=$GITHUB_STEP_SUMMARY$'
+          # Versão gerada\n
+          | versao | data | 
+          |--|--|
+          | ${{ steps.get-version.outputs.tag }} | ${{ steps.get-env.outputs.now }} |  \n
+          Mensagem: ${{ inputs.msg-canal-deploy }}\n'
+          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+
+  publish:
+    needs: build
+    environment: ${{ inputs.environment }}
+    # if: ${{ github.event.pull_request.merged && github.event.pull_request.state == 'closed' }}
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Write to workflow job summary DEPLOY
+        run: |
+          SUMMARY=$'
+          # Versão publicada\n
+          | versao | data | 
+          |--|--|
+          | ${{ needs.build.outputs.tag-version }} | ${{ needs.build.outputs.now }} |  \n
+          Mensagem: ${{ inputs.msg-canal-deploy }}\n'
+          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
