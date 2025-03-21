@@ -171,6 +171,7 @@ jobs:
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.scanner.scanAll=false \
+
             /d:sonar.exclusions="${{ env.sonarExclusions }}"
           dotnet restore ${{ env.pathToCsproj }}
           dotnet build ${{ env.pathToCsproj }} --no-incremental
@@ -193,7 +194,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --sarif-file-output=snyk.sarif --file=./src/PoC.KeyCloak.sln
+          args: --sarif-file-output=snyk.sarif --file=${{ env.pathToSln }}
         
       - name: 🍵 Upload result to GitHub Code Scanning
         if: ${{ inputs.git-leaks }}
