@@ -257,7 +257,7 @@ jobs:
     # if: ${{ github.event.pull_request.merged && github.event.pull_request.state == 'closed' }}
     needs: [build, check-image]
     runs-on: ubuntu-latest
-    if: ${{ needs.check-image.outpus.image_exists == 'false' }}
+    if: ${{ needs.check-image.outputs.image_exists == 'false' }}
     permissions:
       packages: write
       contents: read
@@ -336,7 +336,7 @@ jobs:
     name: Notify if image exists
     needs: check-image
     runs-on: ubuntu-latest
-    if: ${{ needs.check-image.outpus.image_exists == 'true' }}
+    if: ${{ needs.check-image.outputs.image_exists == 'true' }}
     steps:
       - name: Write to workflow job summary
         run: echo "Image with tag ${{ needs.build.outputs.tag-version }} already exists. Skipping push image to registry and publish on Azure Cloud." >> $GITHUB_STEP_SUMM
