@@ -76,7 +76,7 @@ jobs:
     outputs:
       tag-version: ${{ steps.get-version.outputs.TAG }}
       now: ${{ steps.get-env.outputs.NOW }}
-      image-exists: ${{ steps.check-image.outputs.IMAGE_EXISTS }}
+      image-exists: ${{ steps.check-image-and-tag.outputs.IMAGE_EXISTS }}
     runs-on: ubuntu-latest
     timeout-minutes: 4
     permissions:
@@ -232,6 +232,8 @@ jobs:
   check-image:
     name: Check if image exists
     runs-on: ubuntu-latest
+    outputs:
+      image-exists: ${{ steps.check-image-and-tag.outputs.IMAGE_EXISTS }}
     needs: build
     steps:
       - name: Log in to the Container registry
@@ -242,7 +244,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check if image with same tag exists
-        id: check-image
+        id: check-image-and-tag
         run: |
           IMAGE_TAG="ghcr.io/${{ github.actor }}/deploy.${{ env.imageName }}:${{ needs.build.outputs.tag-version }}"
           echo "Checking existence of $IMAGE_TAG..."
