@@ -50,11 +50,21 @@ on:
         default: 'Canal DEPLOY - O melhor canal sobre .NET, Azure, DevOps e IA'
  
 env:
+#plus
+  RED: '\033[0;31m'
+  GREEN: '\033[0;32m'
+  YELLOW: '\033[0;33m'
+  BLUE: '\033[0;34m'
+  RESET: '\033[0m'
+#build
   dotnetVersion: 9.x
-  projectBaseDir: src
+  projectBaseDir: ./src
   pathToSln: ./src/DEPLOY.HybridCache.sln
   pathToCsproj: ./src/DEPLOY.HybridCache.Api/DEPLOY.HybridCache.Api.csproj
   sonarExclusions: '**/Migrations/**'
+#push-image
+  imageName: hybridcache
+  pathToDockerFile: ./src/DEPLOY.HybridCache.Api/Dockerfile
 
 jobs:
   build:
@@ -86,6 +96,12 @@ jobs:
         shell: bash
         run: |
           version=$(sed -n 's/.*<Version>\(.*\)<\/Version>.*/\1/p' ${{ env.pathToCsproj }})
+          
+          if [[ -z "$version" ]]; then
+            echo -e "${RED} Erro: A versão não foi encontrada no arquivo .csproj"
+            exit 1
+          fi
+
           echo "tag=$version" >> "$GITHUB_OUTPUT"
       
       - name: Sys - Setup .NET version ${{ env.dotnetVersion }}
@@ -211,8 +227,70 @@ jobs:
           Mensagem: ${{ inputs.msg-canal-deploy }}\n'
           echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
 
+  push-image:
+    environment: ${{ inputs.environment }}
+    # if: ${{ github.event.pull_request.merged && github.event.pull_request.state == 'closed' }}
+    name: Push image to Registry
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+          buildkitd-flags: --debug
+          platforms: linux/amd64,linux/arm64
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.actor }}/deploy.${{ env.imageName }}
+
+      - name: Build and push ghcr
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.projectBaseDir }}
+          file: ${{ env.pathToDockerFile }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.actor }}/deploy.${{ env.imageName }}:latest
+            ghcr.io/${{ github.actor }}/deploy.${{ env.imageName }}:${{ needs.build.outputs.tag-version }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+
+      - name: Write to workflow job summary DEPLOY
+        run: |
+          SUMMARY=$'
+          # Image publicada\n
+          | versao | data | 
+          |--|--|
+          | ${{ needs.build.outputs.tag-version }} | ${{ needs.build.outputs.now }} |  \n
+          Mensagem: ${{ inputs.msg-canal-deploy }}\n'
+          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+
   publish:
-    needs: build
+    needs: [push-image]
     environment: ${{ inputs.environment }}
     # if: ${{ github.event.pull_request.merged && github.event.pull_request.state == 'closed' }}
     runs-on: ubuntu-latest
@@ -221,7 +299,7 @@ jobs:
       - name: Write to workflow job summary DEPLOY
         run: |
           SUMMARY=$'
-          # Versão publicada\n
+          # Detalhes sobre publicação\n
           | versao | data | 
           |--|--|
           | ${{ needs.build.outputs.tag-version }} | ${{ needs.build.outputs.now }} |  \n
