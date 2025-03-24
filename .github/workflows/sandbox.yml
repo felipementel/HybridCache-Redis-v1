@@ -227,13 +227,36 @@ jobs:
           | ${{ steps.get-version.outputs.tag }} | ${{ steps.get-env.outputs.now }} |  \n
           Mensagem: ${{ inputs.msg-canal-deploy }}\n'
           echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+          
+  check-image:
+    name: Check if image exists
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check if image with same tag exists
+        id: check-image
+        run: |
+          IMAGE_TAG="ghcr.io/${{ github.actor }}/deploy.${{ env.imageName }}:${{ needs.build.outputs.tag-version }}"
+          if docker manifest inspect "$IMAGE_TAG" > /dev/null 2>&1; then
+            echo "IMAGE_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "IMAGE_EXISTS=false" >> $GITHUB_ENV
+          fi
+          
   push-image:
     name: Push image to Registry
     environment: ${{ inputs.environment }}
     # if: ${{ github.event.pull_request.merged && github.event.pull_request.state == 'closed' }}
-    needs: [build]
+    needs: [build, check-image]
     runs-on: ubuntu-latest
+    if: env.IMAGE_EXISTS == 'false'
     permissions:
       packages: write
       contents: read
@@ -307,3 +330,12 @@ jobs:
           | ${{ needs.build.outputs.tag-version }} | ${{ needs.build.outputs.now }} |  \n
           Mensagem: ${{ inputs.msg-canal-deploy }}\n'
           echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+          
+  notify-image-exists:
+    name: Notify if image exists
+    needs: check-image
+    runs-on: ubuntu-latest
+    if: env.IMAGE_EXISTS == 'true'
+    steps:
+      - name: Write to workflow job summary
+        run: echo "Image with tag ${{ needs.build.outputs.tag-version }} already exists. Skipping push image to registry and publish on Azure Cloud." >> $GITHUB_STEP_SUMM
