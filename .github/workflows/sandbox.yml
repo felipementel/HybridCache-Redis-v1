@@ -74,9 +74,9 @@ jobs:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
     outputs:
-      tag-version: ${{ steps.get-version.outputs.tag }}
+      tag-version: ${{ steps.get-version.outputs.TAG }}
       now: ${{ steps.get-env.outputs.NOW }}
-      
+      image_exists: ${{ steps.check-image.outputs.IMAGE_EXISTS }}
     runs-on: ubuntu-latest
     timeout-minutes: 4
     permissions:
@@ -104,7 +104,7 @@ jobs:
             exit 1
           fi
 
-          echo "tag=$version" >> "$GITHUB_OUTPUT"
+          echo "TAG=$version" >> "$GITHUB_OUTPUT"
       
       - name: Sys - Setup .NET version ${{ env.dotnetVersion }}
         uses: actions/setup-dotnet@v4
@@ -233,8 +233,6 @@ jobs:
     name: Check if image exists
     runs-on: ubuntu-latest
     needs: build
-    outputs:
-      image_exists: ${{ steps.check-image.outputs.IMAGE_EXISTS }}
     steps:
       - name: Log in to the Container registry
         uses: docker/login-action@v3
