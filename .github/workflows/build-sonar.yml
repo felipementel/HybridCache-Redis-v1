@@ -68,6 +68,7 @@ env:
 
 jobs:
   build:
+    name: Build
     environment: ${{ inputs.environment }}
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
@@ -228,9 +229,9 @@ jobs:
           echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
 
   push-image:
+    name: Push image to Registry
     environment: ${{ inputs.environment }}
     # if: ${{ github.event.pull_request.merged && github.event.pull_request.state == 'closed' }}
-    name: Push image to Registry
     needs: [build]
     runs-on: ubuntu-latest
     permissions:
@@ -290,6 +291,7 @@ jobs:
           echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
 
   publish:
+    name: Publish
     needs: [push-image]
     environment: ${{ inputs.environment }}
     # if: ${{ github.event.pull_request.merged && github.event.pull_request.state == 'closed' }}
