@@ -245,10 +245,12 @@ jobs:
         id: check-image
         run: |
           IMAGE_TAG="ghcr.io/${{ github.actor }}/deploy.${{ env.imageName }}:${{ needs.build.outputs.tag-version }}"
-          
+          echo "Checking existence of $IMAGE_TAG..."
           if docker manifest inspect "$IMAGE_TAG" > /dev/null 2>&1; then
+            echo "✅ ${GREEN} Image exists in registry"
             echo "IMAGE_EXISTS=true" >> "$GITHUB_OUTPUT"
           else
+            echo "🔍 ${RED} Image does not exist in registry"
             echo "IMAGE_EXISTS=false" >> "$GITHUB_OUTPUT"
           fi
           
