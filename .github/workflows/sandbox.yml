@@ -321,7 +321,7 @@ jobs:
 
   publish:
     name: Publish
-    needs: [build, push-image]
+    needs: [push-image]
     environment: ${{ inputs.environment }}
     # if: ${{ github.event.pull_request.merged && github.event.pull_request.state == 'closed' }}
     runs-on: ubuntu-latest
@@ -338,7 +338,7 @@ jobs:
           
   notify-image-exists:
     name: Notify when already image exists
-    needs: check-image
+    needs: [build, check-image]
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     if: ${{ needs.check-image.outputs.image-exists == 'true' }}
