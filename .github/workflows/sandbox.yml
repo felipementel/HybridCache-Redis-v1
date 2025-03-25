@@ -339,6 +339,7 @@ jobs:
   notify-image-exists:
     name: Notify when already image exists
     needs: check-image
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     if: ${{ needs.check-image.outputs.image-exists == 'true' }}
     steps:
