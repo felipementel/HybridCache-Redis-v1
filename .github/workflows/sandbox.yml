@@ -321,7 +321,7 @@ jobs:
 
   publish:
     name: Publish
-    needs: [push-image]
+    needs: [build, push-image]
     environment: ${{ inputs.environment }}
     # if: ${{ github.event.pull_request.merged && github.event.pull_request.state == 'closed' }}
     runs-on: ubuntu-latest
