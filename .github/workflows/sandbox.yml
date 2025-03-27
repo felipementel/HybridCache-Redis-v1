@@ -60,11 +60,11 @@ env:
   dotnetVersion: 9.x
   projectBaseDir: ./src
   sln: DEPLOY.HybridCache.sln
-  mainProject: DEPLOY.HybridCache.API
+  mainProject: DEPLOY.HybridCache.Api
 #build use
   pathToSln: $projectBaseDir/$sln
   pathToCsproj: $projectBaseDir/$mainProject/$mainProject.csproj
-  sonarExclusions: ""
+  sonarExclusions: '**/Migrations/**'
 #push-image
   imageName: hybridcache
   pathToDockerFile: $projectBaseDir/$mainProject/Dockerfile
