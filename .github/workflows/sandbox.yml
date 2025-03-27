@@ -59,14 +59,14 @@ env:
 #build config
   dotnetVersion: 9.x
   projectBaseDir: ./src
-  sln: DEPLOY.HybridCache.sln
-  mainProject: DEPLOY.HybridCache.Api
+  sln: DEPLOY.KeyCloak.sln
+  mainProject: DEPLOY.KeyCloak.API
 #build use
   pathToSln: $projectBaseDir/$sln
   pathToCsproj: $projectBaseDir/$mainProject/$mainProject.csproj
-  sonarExclusions: '**/Migrations/**'
+  sonarExclusions: ""
 #push-image
-  imageName: hybridcache
+  imageName: keycloak-v1
   pathToDockerFile: $projectBaseDir/$mainProject/Dockerfile
 
 jobs:
@@ -174,10 +174,13 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.scanner.scanAll=false \
             /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
-            /d:sonar.exclusions="${{ env.sonarExclusions }}"
+            /d:sonar.exclusions="${{ env.sonarExclusions || ' '}}"
           dotnet restore ${{ env.pathToCsproj }}
           dotnet build ${{ env.pathToCsproj }} --no-incremental
-          dotnet-coverage collect 'dotnet test ${{ env.projectBaseDir }}/${{ env.mainProject }}.Tests' -f xml -o 'coverage.xml'
+          dotnet-coverage collect 'dotnet test ${{ env.projectBaseDir }}/${{ env.mainProject }}.Tests' `
+                 --format xml `
+                 --output coverage.xml `
+                 --verbosity detailed
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: 🔐 Build and analyze (Test ⛔, Sonar ✅)
