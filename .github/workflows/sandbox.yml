@@ -59,14 +59,14 @@ env:
 #build config
   dotnetVersion: 9.x
   projectBaseDir: ./src
-  sln: DEPLOY.KeyCloak.sln
-  mainProject: DEPLOY.KeyCloak.API
+  sln: DEPLOY.HybridCache.sln
+  mainProject: DEPLOY.HybridCache.API
 #build use
   pathToSln: $projectBaseDir/$sln
   pathToCsproj: $projectBaseDir/$mainProject/$mainProject.csproj
   sonarExclusions: ""
 #push-image
-  imageName: keycloak-v1
+  imageName: hybridcache
   pathToDockerFile: $projectBaseDir/$mainProject/Dockerfile
 
 jobs:
