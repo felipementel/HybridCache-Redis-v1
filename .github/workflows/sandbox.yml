@@ -202,7 +202,7 @@ jobs:
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.scanner.scanAll=false \
-            /d:sonar.exclusions="${{ env.sonarExclusions }}"
+            /d:sonar.exclusions="${{ env.sonarExclusions || ' '}}"
           dotnet restore ${{ env.projectBaseDir }}/${{ env.mainProject }}/${{ env.mainProject }}.csproj
           dotnet build ${{ env.projectBaseDir }}/${{ env.mainProject }}/${{ env.mainProject }}.csproj --no-incremental
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
