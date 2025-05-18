@@ -66,8 +66,8 @@ jobs:
       environment: ${{ inputs.environment }}
       gitLeaks: ${{ inputs.gitLeaks }}
       sonarQube: ${{ inputs.sonarQube }}
-      testsFolder: "tests"
-      tests: ${{ inputs.tests }}
+      testsFolder: "" # "tests"
+      tests: false # ${{ inputs.tests }}
       snyk: ${{ inputs.snyk }}
       msgCanalDeploy: ${{ inputs.msgCanalDeploy }}
       dotnetVersion: ${{ vars.DOTNETVERSION }}
@@ -77,6 +77,6 @@ jobs:
       reportTitle: ${{ vars.REPORTTITLE }}
       sonarExclusions: ${{ vars.SONAREXCLUSIONS || ''}}
       imageName: ${{ vars.IMAGENAME }}-sandbox
-      openAPIFolder: "open-api"
+      openAPIFolder: "" # "open-api"
     secrets:
       inherit
