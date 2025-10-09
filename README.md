@@ -40,7 +40,7 @@ docker exec -it redisDEPLOY redis-cli
 ## URL do Emulador
 
 ```
-https://localhost:9081
+https://localhost:9081/
 ```
 
 ## Calculadora
