@@ -7,6 +7,7 @@ version: 2
 updates:
   - package-ecosystem: "nuget"
     directory: "/src"
+    target-branch: "main"
     schedule:
       interval: "weekly"
       day: "sunday"
@@ -23,6 +24,7 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/docker"
+    target-branch: "main"
     registries:
       - dockerhub
     schedule:
@@ -41,6 +43,7 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/.github/workflows"
+    target-branch: "main"
     schedule:
       interval: "weekly"
       day: "sunday"
