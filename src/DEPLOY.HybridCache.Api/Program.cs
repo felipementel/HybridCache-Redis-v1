@@ -48,10 +48,10 @@ app.MapGet(
         CancellationToken token) =>
     {
         return await hybridCache.GetOrCreateAsync(
-        key: $"{name}-{age}",
-          async cancel => await GetDataFromTheSourceAsync(name, age, cancel),
-          cancellationToken: token
-      );
+            key: $"{name}-{age}",
+            factory: async cancel => await GetDataFromTheSourceAsync(name, age, cancel),
+            cancellationToken: token
+        );
     })
 .WithOpenApi(operation => new(operation)
 {
@@ -74,10 +74,10 @@ app.MapGet("/get-using-cache/v2/{name}/{age}", async (
         LocalCacheExpiration = TimeSpan.FromMinutes(1)
     };
     return await hybridCache.GetOrCreateAsync(
-        $"{name}-{age}", // Unique key to the cache entry
-        async cancel => await GetDataFromTheSourceAsync(name, age, cancel),
-        entryOptions,
-        tags,
+        key: $"{name}-{age}", // Unique key to the cache entry
+        factory: async cancel => await GetDataFromTheSourceAsync(name, age, cancel),
+        options: entryOptions,
+        tags: tags,
         cancellationToken: token
     );
 })
