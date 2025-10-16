@@ -1,4 +1,6 @@
-﻿services:
+# docker system prune -a -f && docker volume prune -f && docker network prune -f && docker container prune -f
+ 
+ services:
 
   redisdb:
     image: redis:7.4.1
